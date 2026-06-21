@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/terryncew/openline-agents/schemas/outcome-receipt.schema.json",
+  "title": "OpenLine orthogonal outcome receipt 0.1 draft",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["kind", "receipt_version", "algorithm_id", "canonicalization_id", "spec_uri", "attestation", "input_receipt_hash", "input_trace_id", "label", "score_micros", "label_schema_id", "evidence_hash", "witness_id", "observed_at_unix_micros", "payload_hash", "signature"],
+  "properties": {
+    "kind": {"const": "outcome_receipt"},
+    "receipt_version": {"const": "0.1-draft"},
+    "algorithm_id": {"const": "openline-orthogonal-outcome-0.1-draft"},
+    "canonicalization_id": {"const": "olp-canonical-json-int-v1"},
+    "spec_uri": {"const": "https://github.com/terryncew/openline-agents"},
+    "attestation": {"const": "witness_signed"},
+    "input_receipt_hash": {"$ref": "#/$defs/hash256"},
+    "input_trace_id": {"type": "string", "pattern": "^[0-9a-f]{32}$"},
+    "label": {"enum": ["pass", "fail", "review"]},
+    "score_micros": {"anyOf": [{"type": "integer", "minimum": 0, "maximum": 1000000}, {"type": "null"}]},
+    "label_schema_id": {"type": "string", "minLength": 1},
+    "evidence_hash": {"$ref": "#/$defs/hash256"},
+    "witness_id": {"type": "string", "minLength": 1, "pattern": "^[\\x20-\\x7e]+$"},
+    "observed_at_unix_micros": {"type": "integer", "minimum": 0, "maximum": 9007199254740991},
+    "payload_hash": {"$ref": "#/$defs/hash256"},
+    "signature": {"$ref": "#/$defs/signature"}
+  },
+  "$defs": {
+    "hash256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "signature": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["algorithm", "public_key", "value"],
+      "properties": {
+        "algorithm": {"const": "Ed25519"},
+        "public_key": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "value": {"type": "string", "pattern": "^[0-9a-f]{128}$"}
+      }
+    }
+  }
+}

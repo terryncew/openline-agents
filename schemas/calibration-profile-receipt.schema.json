@@ -1,0 +1,76 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/terryncew/openline-agents/schemas/calibration-profile-receipt.schema.json",
+  "title": "Terrynce Curve calibration profile receipt 0.1 draft",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["kind", "receipt_version", "algorithm_id", "canonicalization_id", "spec_uri", "attestation", "profile_id", "measurement_algorithm_id", "fit_method_id", "thresholds", "training_corpus_hash", "holdout_corpus_hash", "training_sample_count", "holdout_sample_count", "criteria", "validation", "activation_status", "payload_hash", "signature"],
+  "properties": {
+    "kind": {"const": "tc_calibration_profile_receipt"},
+    "receipt_version": {"const": "0.1-draft"},
+    "algorithm_id": {"const": "tc-threshold-calibration-0.1-draft"},
+    "canonicalization_id": {"const": "olp-canonical-json-int-v1"},
+    "spec_uri": {"const": "https://github.com/terryncew/openline-agents"},
+    "attestation": {"const": "self"},
+    "profile_id": {"type": "string", "minLength": 1, "pattern": "^[\\x20-\\x7e]+$"},
+    "measurement_algorithm_id": {"const": "cole-portable-core-2.1-draft"},
+    "fit_method_id": {"const": "per-metric-weighted-error-threshold-or-policy-v1"},
+    "thresholds": {"$ref": "#/$defs/thresholds"},
+    "training_corpus_hash": {"$ref": "#/$defs/hash256"},
+    "holdout_corpus_hash": {"$ref": "#/$defs/hash256"},
+    "training_sample_count": {"$ref": "#/$defs/safeInteger"},
+    "holdout_sample_count": {"$ref": "#/$defs/safeInteger"},
+    "criteria": {"$ref": "#/$defs/criteria"},
+    "validation": {"$ref": "#/$defs/validation"},
+    "activation_status": {"enum": ["shadow_only", "eligible_for_activation"]},
+    "payload_hash": {"$ref": "#/$defs/hash256"},
+    "signature": {"$ref": "#/$defs/signature"}
+  },
+  "$defs": {
+    "safeInteger": {"type": "integer", "minimum": 0, "maximum": 9007199254740991},
+    "rate": {"anyOf": [{"type": "integer", "minimum": 0, "maximum": 1000000}, {"type": "null"}]},
+    "hash256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "thresholds": {
+      "type": "object", "additionalProperties": false,
+      "required": ["kappa_micros", "epsilon_micros", "delta_hol_micros"],
+      "properties": {
+        "kappa_micros": {"$ref": "#/$defs/safeInteger"},
+        "epsilon_micros": {"$ref": "#/$defs/safeInteger"},
+        "delta_hol_micros": {"$ref": "#/$defs/safeInteger"}
+      }
+    },
+    "criteria": {
+      "type": "object", "additionalProperties": false,
+      "required": ["min_total_samples", "min_holdout_samples", "max_false_accept_micros", "max_false_retry_micros", "false_accept_weight", "false_retry_weight"],
+      "properties": {
+        "min_total_samples": {"$ref": "#/$defs/safeInteger"},
+        "min_holdout_samples": {"$ref": "#/$defs/safeInteger"},
+        "max_false_accept_micros": {"type": "integer", "minimum": 0, "maximum": 1000000},
+        "max_false_retry_micros": {"type": "integer", "minimum": 0, "maximum": 1000000},
+        "false_accept_weight": {"type": "integer", "minimum": 1, "maximum": 9007199254740991},
+        "false_retry_weight": {"type": "integer", "minimum": 1, "maximum": 9007199254740991}
+      }
+    },
+    "validation": {
+      "type": "object", "additionalProperties": false,
+      "required": ["failed_count", "passed_count", "false_accept_count", "false_retry_count", "false_accept_micros", "false_retry_micros"],
+      "properties": {
+        "failed_count": {"$ref": "#/$defs/safeInteger"},
+        "passed_count": {"$ref": "#/$defs/safeInteger"},
+        "false_accept_count": {"$ref": "#/$defs/safeInteger"},
+        "false_retry_count": {"$ref": "#/$defs/safeInteger"},
+        "false_accept_micros": {"$ref": "#/$defs/rate"},
+        "false_retry_micros": {"$ref": "#/$defs/rate"}
+      }
+    },
+    "signature": {
+      "type": "object", "additionalProperties": false,
+      "required": ["algorithm", "public_key", "value"],
+      "properties": {
+        "algorithm": {"const": "Ed25519"},
+        "public_key": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "value": {"type": "string", "pattern": "^[0-9a-f]{128}$"}
+      }
+    }
+  }
+}

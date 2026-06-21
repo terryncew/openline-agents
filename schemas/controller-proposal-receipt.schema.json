@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/terryncew/openline-agents/schemas/controller-proposal-receipt.schema.json",
+  "title": "Terrynce Curve controller proposal receipt 0.1 draft",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["kind", "receipt_version", "algorithm_id", "canonicalization_id", "spec_uri", "attestation", "mode", "action", "input_receipt_hash", "measurement_receipt_hash", "outcome_receipt_hash", "calibration_profile_hash", "previous_proposal_hash", "reasons", "payload_hash", "signature"],
+  "properties": {
+    "kind": {"const": "tc_controller_proposal_receipt"},
+    "receipt_version": {"const": "0.1-draft"},
+    "algorithm_id": {"const": "tc-controller-0.1-draft"},
+    "canonicalization_id": {"const": "olp-canonical-json-int-v1"},
+    "spec_uri": {"const": "https://github.com/terryncew/openline-agents"},
+    "attestation": {"const": "self"},
+    "mode": {"enum": ["shadow", "active"]},
+    "action": {"enum": ["accept", "retry", "human_review"]},
+    "input_receipt_hash": {"$ref": "#/$defs/hash256"},
+    "measurement_receipt_hash": {"$ref": "#/$defs/nullableHash"},
+    "outcome_receipt_hash": {"$ref": "#/$defs/hash256"},
+    "calibration_profile_hash": {"$ref": "#/$defs/nullableHash"},
+    "previous_proposal_hash": {"$ref": "#/$defs/nullableHash"},
+    "reasons": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1, "pattern": "^[\\x20-\\x7e]+$"}},
+    "payload_hash": {"$ref": "#/$defs/hash256"},
+    "signature": {"$ref": "#/$defs/signature"}
+  },
+  "$defs": {
+    "hash256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "nullableHash": {"anyOf": [{"$ref": "#/$defs/hash256"}, {"type": "null"}]},
+    "signature": {
+      "type": "object", "additionalProperties": false,
+      "required": ["algorithm", "public_key", "value"],
+      "properties": {
+        "algorithm": {"const": "Ed25519"},
+        "public_key": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "value": {"type": "string", "pattern": "^[0-9a-f]{128}$"}
+      }
+    }
+  }
+}
