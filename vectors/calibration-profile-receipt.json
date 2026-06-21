@@ -1,0 +1,43 @@
+{
+  "activation_status": "eligible_for_activation",
+  "algorithm_id": "tc-threshold-calibration-0.1-draft",
+  "attestation": "self",
+  "canonicalization_id": "olp-canonical-json-int-v1",
+  "criteria": {
+    "false_accept_weight": 2,
+    "false_retry_weight": 1,
+    "max_false_accept_micros": 0,
+    "max_false_retry_micros": 0,
+    "min_holdout_samples": 100,
+    "min_total_samples": 500
+  },
+  "fit_method_id": "per-metric-weighted-error-threshold-or-policy-v1",
+  "holdout_corpus_hash": "bafb77eea446259a34ee041e1180d46720b7fb739d1dd92d0c0293025b553035",
+  "holdout_sample_count": 100,
+  "kind": "tc_calibration_profile_receipt",
+  "measurement_algorithm_id": "cole-portable-core-2.1-draft",
+  "payload_hash": "08104c36279e97ee656c8c9b7fe258c45da01f98c1d92e195c021e1a66e860e6",
+  "profile_id": "conformance-profile",
+  "receipt_version": "0.1-draft",
+  "signature": {
+    "algorithm": "Ed25519",
+    "public_key": "ed4928c628d1c2c6eae90338905995612959273a5c63f93636c14614ac8737d1",
+    "value": "8e7d32c995b165ce351d13eb09f8dd17cfb7fb2f3f499d7d9b24d4d5d322e5664acc2ca039a4b1ef0d36146a9666e0bb97bcd684725360564d89af27fb388400"
+  },
+  "spec_uri": "https://github.com/terryncew/openline-agents",
+  "thresholds": {
+    "delta_hol_micros": 900000,
+    "epsilon_micros": 900000,
+    "kappa_micros": 900000
+  },
+  "training_corpus_hash": "3ffac7ba807fb367b0c884a76a23c5f0197f61e55d2177a7a6780152dc13dd76",
+  "training_sample_count": 400,
+  "validation": {
+    "failed_count": 50,
+    "false_accept_count": 0,
+    "false_accept_micros": 0,
+    "false_retry_count": 0,
+    "false_retry_micros": 0,
+    "passed_count": 50
+  }
+}

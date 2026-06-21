@@ -1,0 +1,22 @@
+{
+  "algorithm_id": "openline-orthogonal-outcome-0.1-draft",
+  "attestation": "witness_signed",
+  "canonicalization_id": "olp-canonical-json-int-v1",
+  "evidence_hash": "0883407507398f58e21ab97dfc45a7795e51dfe427fdd605fbce08db750727f9",
+  "input_receipt_hash": "84f84d759495a77bb99a04f680a8727233b7ab01198d51209de902d8cd4b971d",
+  "input_trace_id": "0123456789abcdef0123456789abcdef",
+  "kind": "outcome_receipt",
+  "label": "pass",
+  "label_schema_id": "conformance.pass-fail.v1",
+  "observed_at_unix_micros": 1780000000000000,
+  "payload_hash": "a4d371a1e5b11faceb85406c609fe4c5edf22333138cf6dd874dcdb241e89060",
+  "receipt_version": "0.1-draft",
+  "score_micros": 1000000,
+  "signature": {
+    "algorithm": "Ed25519",
+    "public_key": "8139770ea87d175f56a35466c34c7ecccb8d8a91b4ee37a25df60f5b8fc9b394",
+    "value": "2c1f2439966ab4d0bc05f8f3bfae9419730f0d3d3e0b37d119a1d2e9b25cca5951ed69a20a1fc2a3fb4b19555ae4ce3210d82ed47b669030701abf92b2f4f909"
+  },
+  "spec_uri": "https://github.com/terryncew/openline-agents",
+  "witness_id": "conformance-suite"
+}

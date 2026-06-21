@@ -1,0 +1,24 @@
+{
+  "action": "accept",
+  "algorithm_id": "tc-controller-0.1-draft",
+  "attestation": "self",
+  "calibration_profile_hash": null,
+  "canonicalization_id": "olp-canonical-json-int-v1",
+  "input_receipt_hash": "84f84d759495a77bb99a04f680a8727233b7ab01198d51209de902d8cd4b971d",
+  "kind": "tc_controller_proposal_receipt",
+  "measurement_receipt_hash": null,
+  "mode": "shadow",
+  "outcome_receipt_hash": "a4d371a1e5b11faceb85406c609fe4c5edf22333138cf6dd874dcdb241e89060",
+  "payload_hash": "48bd87b4c7633f5c1c317a42c0465a40a82a404bd6f1f8e7cbf51665c73fdf3f",
+  "previous_proposal_hash": null,
+  "reasons": [
+    "orthogonal_outcome_passed"
+  ],
+  "receipt_version": "0.1-draft",
+  "signature": {
+    "algorithm": "Ed25519",
+    "public_key": "ca93ac1705187071d67b83c7ff0efe8108e8ec4530575d7726879333dbdabe7c",
+    "value": "6a46450e0ddaf5f8486f75760ef7ded1595b80aee827e1ad51bcb72fabc5b6a47ebc1256f111263df3a5e03bb18c556fbb86136e2059f49733f117e1fd58c308"
+  },
+  "spec_uri": "https://github.com/terryncew/openline-agents"
+}

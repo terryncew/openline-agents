@@ -1,0 +1,15 @@
+{
+  "algorithm_id": "openline-agents-vector-input-v1",
+  "attestation": "self",
+  "canonicalization_id": "olp-canonical-json-int-v1",
+  "kind": "trace_receipt",
+  "payload_hash": "84f84d759495a77bb99a04f680a8727233b7ab01198d51209de902d8cd4b971d",
+  "receipt_version": "0.1",
+  "signature": {
+    "algorithm": "Ed25519",
+    "public_key": "8a88e3dd7409f195fd52db2d3cba5d72ca6709bf1d94121bf3748801b40f6f5c",
+    "value": "6a21cacca56e956d2f39325ba5b34593c3b39b16172673e2b1e2fe7718f453762e2f024076230e52285e6a88ea7e806691afa0bb0a05d0e56e75d50301ebe707"
+  },
+  "spec_uri": "https://github.com/terryncew/openline-agents",
+  "trace_id": "0123456789abcdef0123456789abcdef"
+}
