@@ -1,0 +1,33 @@
+name: OpenLine Agents Conformance
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.11", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: terryncew/cole-portable-core
+          ref: v0.1.0-draft
+          path: _cole
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+      - run: python -m pip install ./_cole
+      - run: python -m pip install "openai-agents==0.17.6"
+      - run: python -m pip install -e . --no-deps
+      - run: python -m unittest discover -s tests -v
+      - run: python scripts/generate_vectors.py
+      - run: node verify-node.mjs
