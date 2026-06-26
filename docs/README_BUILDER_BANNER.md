@@ -1,0 +1,1 @@
+> **Builders wanted:** OpenLine has the receipt primitive. The open territory is viewers, dashboards, GitHub connectors, discovery tools, and agent wrappers. Pick one connector, ship it, and own the surface. See the pinned issue: **Build OpenLine Connectors**.
