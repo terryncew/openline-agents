@@ -1,0 +1,41 @@
+{
+  "schema": "openline.receipt.v1",
+  "type": "handoff_receipt",
+  "id": "olr_demo_001",
+  "created_at": "2026-06-25T00:00:00Z",
+  "issuer": {
+    "type": "agent",
+    "name": "research-agent-demo",
+    "id": "agent_demo_research"
+  },
+  "handoff": {
+    "from": "research-agent-demo",
+    "to": "review-agent-demo",
+    "boundary": "agent_to_agent"
+  },
+  "claim": {
+    "text": "The linked source supports the claim that AI agent handoffs need portable verification records.",
+    "confidence": 0.78
+  },
+  "evidence": [
+    {
+      "type": "url",
+      "label": "source_document",
+      "value": "https://example.com/source"
+    }
+  ],
+  "action": {
+    "type": "handoff",
+    "summary": "Research agent passed a claim and supporting source to a review agent."
+  },
+  "outcome": {
+    "status": "pending_review",
+    "summary": "Receipt created before review so downstream systems can verify what crossed the boundary."
+  },
+  "parents": [],
+  "verification": {
+    "signature": "demo_unsigned",
+    "hash": "demo_hash_pending",
+    "status": "demo"
+  }
+}
