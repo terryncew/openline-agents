@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "openline-agents"
+version = "0.1.0"
+description = "Signed OLP capture, self-service calibration, and shadow control for OpenAI agents"
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.11"
+dependencies = [
+  "cryptography>=41",
+  "openai-agents>=0.17.6,<0.18",
+  "cole-portable-core @ git+https://github.com/terryncew/cole-portable-core.git@v0.1.1",
+]
+
+[project.urls]
+Homepage = "https://github.com/terryncew/openline-agents"
+Repository = "https://github.com/terryncew/openline-agents"
+Issues = "https://github.com/terryncew/openline-agents/issues"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-dir]
+"" = "src"
