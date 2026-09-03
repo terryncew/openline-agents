@@ -1,0 +1,62 @@
+name: AIRLOCK-COLD-ADOPTION-v0.4.0
+
+on:
+  push:
+    branches:
+      - "test/airlock-cold-adoption-v040"
+
+permissions:
+  contents: read
+
+jobs:
+  starter-rules:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out untouched target commit
+        uses: actions/checkout@v4
+        with:
+          ref: cce17a5e114799271900a32f6a3fe5781e5e8441
+          persist-credentials: false
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+
+      - name: Install target repo's ordinary dependencies
+        run: |
+          python -m pip install "git+https://github.com/terryncew/cole-portable-core.git@v0.1.0-draft"
+          python -m pip install "openai-agents==0.17.6"
+
+      - name: Install exact released Airlock
+        run: |
+          python -m pip install "git+https://github.com/terryncew/openline-airlock.git@v0.4.0"
+          test "$(airlock --version)" = "0.4.0"
+
+      - name: Prove target was not preconfigured for Airlock
+        run: |
+          test ! -e .airlock
+          test ! -e airlock.json
+          git diff --exit-code
+          test -z "$(git status --porcelain)"
+
+      - name: Cold init with no tuning
+        id: cold_init
+        shell: bash
+        run: |
+          set -o pipefail
+          airlock init --repo . 2>&1 | tee airlock-cold-adoption-v040.txt
+
+      - name: Preserve cold-adoption evidence
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: airlock-cold-adoption-v040
+          path: |
+            airlock-cold-adoption-v040.txt
+            .airlock/config.json
+          if-no-files-found: warn
+          retention-days: 30
