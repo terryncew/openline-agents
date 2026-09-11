@@ -1,167 +1,94 @@
 # openline-agents
 
-Signed OLP capture, outcome-grounded calibration, and shadow control for the OpenAI Agents SDK.
+Receiver-owned control for OpenAI agents.
 
-> **Builders wanted:** OpenLine needs its first useful surfaces: a receipt viewer, GitHub issue/PR exporter, discovery UI, or agent wrapper. Build one small connector and own the surface. Start here: [Build OpenLine Connectors](https://github.com/terryncew/openline-agents/issues/1).
+Use OpenLine with the OpenAI Agents SDK or the managed Agents API. The agent can propose a tool call. Your application decides whether that exact action is authorized before the effect occurs.
 
-OpenLine is for portable proof across AI handoffs.
+There are two integration paths:
 
-A log stays inside the stack. A receipt travels with the user.
+- **Managed Agents API:** put OpenLine Receipt Gate in the custom-function handler or in an MCP receiver you control. OpenAI manages the session; your receiver decides whether the proposed effect may happen.
+- **OpenAI Agents SDK:** keep using the existing `OpenLineTraceProcessor` to capture portable signed receipts from SDK traces.
 
-`openline-agents` attaches through the OpenAI Agents SDK trace processor interface. Ordinary generations, tool calls, handoffs, and guardrails produce a structural `trace_receipt`. Explicit `olp.*` custom spans produce a hash-bound `coherence_input_receipt` and disclosure that COLE Portable Core can measure.
+The existing SDK integration is unchanged. The managed Agents API path is an application-side receiver pattern, not a replacement for the SDK trace processor.
 
-The package never infers claims or evidence from ordinary model text. Raw evidence can stay local. The receipt preserves what crossed the boundary.
+## Agents API Receiver Boundary
 
-## Why this exists
-
-AI agents are starting to act across tools, teams, vendors, and institutions.
-
-That creates a simple problem: the important part of the run often disappears at the handoff.
-
-Who made the claim? What evidence supported it? Which tool call mattered? What outcome came back? Which system accepted the next step?
-
-OpenLine receipts are small portable records for those crossings.
-
-The goal is not to centralize every trace.
-
-The goal is to let proof move.
-
-## Build on OpenLine
-
-The primitive is here. The app layer is open.
-
-Useful first surfaces:
-
-### Receipt Viewer
-
-Drop in a receipt JSON and render a clean card:
-
-- claim
-- evidence
-- action or outcome
-- issuer
-- timestamp
-- parent chain
-- verification status
-
-Bonus: parent-chain view, signature check, embeddable card, dark mode.
-
-### GitHub Issue / PR Connector
-
-Turn an issue, pull request, or review into an OpenLine receipt.
-
-Useful outputs:
-
-- export as OpenLine receipt
-- attach receipt to issue comment
-- capture claim, change, test, reviewer, and outcome
-- preserve parent issue or PR link
-
-### Discovery UI
-
-Create an Opportunity Pack and export a receipt.
-
-The form should capture:
-
-- claim
-- falsifier
-- measurable KPI
-- cheapest credible witness
-- expected test window
-- result or outcome
-
-### Agent Wrapper
-
-Wrap an agent run so a portable receipt is created at the handoff.
-
-Useful outputs:
-
-- receipt for a tool call
-- receipt for an agent-to-agent handoff
-- receipt for a human-review escalation
-- receipt for a verified outcome
-
-Want to build one? Start with the issue: [Build OpenLine Connectors](https://github.com/terryncew/openline-agents/issues/1).
-
-## Example receipt
-
-A minimal handoff receipt lives at:
+The managed Agents API can pause a session in `requires_action` and expose pending function calls. That is the receiver boundary.
 
 ```text
-examples/simple-handoff.receipt.json
+OpenAI Agents API
+        |
+  proposed tool call
+        |
+        v
+OpenLine Receipt Gate
+        |
+ COMMIT / QUARANTINE / DENY
+        |
+        v
+ consequential function
+        |
+ tool result -> Agents API
 ```
 
-The basic shape is:
+OpenAI owns the managed session mechanics. OpenLine belongs immediately before the effect your application controls.
 
-```json
-{
-  "schema": "openline.receipt.v1",
-  "type": "handoff_receipt",
-  "id": "olr_demo_001",
-  "created_at": "2026-06-25T00:00:00Z",
-  "issuer": {
-    "type": "agent",
-    "name": "research-agent-demo",
-    "id": "agent_demo_research"
-  },
-  "handoff": {
-    "from": "research-agent-demo",
-    "to": "review-agent-demo",
-    "boundary": "agent_to_agent"
-  },
-  "claim": {
-    "text": "The linked source supports the claim that AI agent handoffs need portable verification records.",
-    "confidence": 0.78
-  },
-  "evidence": [
-    {
-      "type": "url",
-      "label": "source_document",
-      "value": "https://example.com/source"
-    }
-  ],
-  "action": {
-    "type": "handoff",
-    "summary": "Research agent passed a claim and supporting source to a review agent."
-  },
-  "outcome": {
-    "status": "pending_review",
-    "summary": "Receipt created before review so downstream systems can verify what crossed the boundary."
-  },
-  "parents": [],
-  "verification": {
-    "signature": "demo_unsigned",
-    "hash": "demo_hash_pending",
-    "status": "demo"
-  }
-}
-```
+For a custom function call, the receiver gets the proposed `turn_id`, `call_id`, function name, and JSON arguments. Send that exact proposal through Receipt Gate.
 
-## What the loop does
+- `COMMIT` -> execute the consequential function, then submit a successful `agent.session.input.tool_result`.
+- `QUARANTINE` -> do not execute the function; submit a failed tool result explaining that receiver review is required.
+- `DENY` -> do not execute the function; submit a failed tool result explaining that the receiver refused the action.
+
+The tool result copies the original `turn_id` and `call_id` back to the managed session.
+
+A complete example lives at:
 
 ```text
-agent run
-  -> signed Canon input
-  -> COLE measurement
-  -> externally witnessed outcome
-  -> shadow controller proposal
-  -> caller-approved revision
-  -> next signed measurement linked to the prior input
+examples/agents_api_receiver_boundary.py
 ```
 
-The controller proposes `accept`, `retry`, or `human_review`.
+It defines one custom function tool, `deploy_release`, creates a managed session, waits for `requires_action`, routes the exact proposal through an injected Receipt Gate callback, executes only on `COMMIT`, and submits the result through:
 
-Shadow mode never executes a retry without a caller-supplied approval callback. Context revision is also supplied by the caller. The package does not silently rewrite prompts.
+```python
+client.beta.agents.sessions.events.create(
+    session_id,
+    events=[tool_result],
+    idempotency_key=...,
+)
+```
 
-## Install
+The example uses a safe demo gate and a simulated deployment. Replace those two functions with your real OpenLine Receipt Gate adapter and your real effect.
+
+For real side effects, persist or reconcile `(session_id, turn_id, call_id)` at the receiver. The Agents API idempotency key can deduplicate event submission; it does not prove that an external side effect did or did not already happen.
+
+### Run the managed API example
+
+Install a current OpenAI Python client, set your API key and a model available to your project, then run:
 
 ```bash
-python -m pip install \
-  "git+https://github.com/terryncew/cole-portable-core.git@v0.1.0-draft" \
-  "git+https://github.com/terryncew/openline-agents.git"
+python -m pip install -U openai
+export OPENAI_API_KEY=...
+export OPENAI_AGENT_MODEL=...
+python examples/agents_api_receiver_boundary.py
 ```
 
-## Attach capture
+The example deliberately does not add the managed Agents API client as a package dependency. `openline-agents` still supports its existing Agents SDK integration without forcing SDK users onto a different runtime.
+
+### MCP receiver path
+
+The same boundary applies when you own the MCP receiver:
+
+```text
+Agents API -> MCP call -> your MCP server -> Receipt Gate -> effect
+```
+
+Gate the exact call before your MCP server causes the consequential effect.
+
+This repo does not claim to intercept hosted tools or effects that your application does not mediate.
+
+## Agents SDK trace capture
+
+For applications running the OpenAI Agents SDK directly, the existing trace-processor path remains available.
 
 ```python
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
@@ -176,9 +103,47 @@ Adding the processor preserves the SDK's default OpenAI trace exporter.
 
 Use `set_trace_processors([processor])` only when you intend to replace it.
 
-## Emit explicit coherence input
+Ordinary generations, tool calls, handoffs, and guardrails produce a structural `trace_receipt`. Explicit `olp.*` custom spans can produce the older coherence-research artifacts described below.
 
-Use these helpers inside the same Agents SDK trace:
+The package never infers claims or evidence from ordinary model text. Raw evidence can stay local. The receipt preserves what crossed the boundary.
+
+## Portable receipts
+
+A log stays inside a stack. A receipt can travel with the user.
+
+OpenLine receipts are intended to preserve the evidence needed at a handoff: what was proposed, what was accepted, what happened, who issued the record, and what earlier record it depends on.
+
+A minimal handoff receipt lives at:
+
+```text
+examples/simple-handoff.receipt.json
+```
+
+The Agents API receiver example is different: it shows where to make the consequential decision before a custom function runs.
+
+## Install the SDK integration
+
+```bash
+python -m pip install "git+https://github.com/terryncew/openline-agents.git"
+```
+
+The package currently targets the OpenAI Agents SDK trace-processor interface. The managed Agents API receiver example is intentionally application-side glue and does not alter that SDK adapter.
+
+## Experimental research surface
+
+The COLE/calibration and shadow-controller work remains in the repository, but it is not the product front door.
+
+That experimental surface includes:
+
+- explicit `olp.*` custom spans for claims, evidence, relations, and signals
+- outcome receipts from an orthogonal witness
+- deterministic calibration profiles
+- shadow controller proposals such as `accept`, `retry`, or `human_review`
+- caller-approved context revision
+
+Those components are retained for research and compatibility. They do not replace receiver-owned authorization at the effect boundary.
+
+Use these helpers inside an Agents SDK trace when you are intentionally working with the research surface:
 
 ```python
 from openline_agents import claim, evidence, relation, signal
@@ -196,58 +161,13 @@ with signal(0, 240_000, "my-agent.normalized-signal.v1"):
     pass
 ```
 
-Only content hashes enter the portable graph. Raw evidence remains local.
+Only content hashes enter that portable graph. Raw evidence remains local.
 
-## Orthogonal outcomes
+Calibration labels come from a separate witness such as tests, a human decision, a schema check, or an observed environment result. The agent cannot sign its own outcome as an external witness.
 
-Calibration labels come from a separate witness: tests, a human decision, a schema check, or an observed environment result.
+`verified_record(...)`, `issue_calibration_profile(...)`, and the shadow controller remain available for that experimental work. See [`SPEC.md`](./SPEC.md) for the signed artifacts and activation rules.
 
-The agent cannot sign its own outcome as an external witness.
-
-Every controller proposal requires an explicit trusted witness public key. A valid outcome signed by any other key is rejected.
-
-```python
-from openline_agents import Outcome, issue_outcome_receipt
-
-outcome = Outcome(
-    label="pass",
-    score_micros=1_000_000,
-    label_schema_id="ci.pass-fail.v1",
-    evidence_hash=sha256(test_output).hexdigest(),
-    witness_id="ci-test-suite",
-    observed_at_unix_micros=observed_at,
-)
-
-receipt = issue_outcome_receipt(bundle.receipt, outcome, witness_key)
-```
-
-## Self-service calibration
-
-`verified_record(...)` accepts only recomputable COLE measurements and outcomes bound to the same signed input.
-
-Training and holdout corpora must be disjoint.
-
-`issue_calibration_profile(...)` fits deterministic per-metric thresholds and reports false-accept and false-retry rates on the held-out records.
-
-A profile remains `shadow_only` until all caller-declared gates pass and the combined corpus contains at least 500 unique labeled runs.
-
-Eligibility still requires an explicit choice to operate the controller in active mode.
-
-## Current boundary
-
-This is a draft surface for signed capture and shadow control.
-
-Current limits:
-
-- workflow improvement, not model-weight training
-- COLE and the orthogonal witness remain separate inputs
-- a failed outcome and a metric disagreement escalate to human review
-- the adapter preserves provisional/self-attested Canon trust labels
-- production routing, distributed collection, and hosted calibration are outside this draft
-
-See [`SPEC.md`](./SPEC.md) for signed artifacts and activation rules.
-
-## Verify the release
+## Verify
 
 ```bash
 python -m unittest discover -s tests -v
@@ -255,19 +175,12 @@ python scripts/generate_vectors.py
 node verify-node.mjs
 ```
 
-The fixed vectors cover the signed witness outcome, calibration profile, and controller proposal.
+The Agents API receiver tests specifically prove that:
 
-The independent Node verifier accepts all three and rejects a tampered proposal.
-
-## Builder rule
-
-Small receipts. Big accountability.
-
-Build one connector.
-
-Keep it portable.
-
-Leave proof at the handoff.
+- the gate sees the exact proposed function arguments and call identity
+- `COMMIT` is the only disposition that invokes the consequential function
+- `QUARANTINE` and `DENY` return tool-result failures without invoking the function
+- the submitted tool result preserves the managed session's `turn_id` and `call_id`
 
 ## License
 
