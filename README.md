@@ -121,13 +121,13 @@ examples/simple-handoff.receipt.json
 
 The Agents API receiver example is different: it shows where to make the consequential decision before a custom function runs.
 
-## Install the SDK integration
+## Existing SDK integration
 
-```bash
-python -m pip install "git+https://github.com/terryncew/openline-agents.git"
-```
+The existing Agents SDK trace processor remains in the repository unchanged. It still uses the legacy `cole-portable-core` dependency that backed the original signed-capture and calibration work.
 
-The package currently targets the OpenAI Agents SDK trace-processor interface. The managed Agents API receiver example is intentionally application-side glue and does not alter that SDK adapter.
+That dependency is separate from the managed Agents API receiver example above. The managed example does not import `openline_agents` or require COLE; it only needs a current OpenAI Python client.
+
+If your environment already has access to the legacy COLE dependency, the existing SDK trace-processor path remains available. This update does not repackage or replace that older dependency.
 
 ## Experimental research surface
 

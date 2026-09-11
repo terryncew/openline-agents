@@ -9,25 +9,124 @@ permissions:
   contents: read
 
 jobs:
-  verify:
+  receiver-boundary:
+    name: receiver-boundary (${{ matrix.python-version }})
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         python-version: ["3.11", "3.12"]
+
     steps:
       - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Verify managed Agents API receiver boundary
+        run: |
+          python -m py_compile examples/agents_api_receiver_boundary.py
+          python -m unittest tests/test_agents_api_receiver_boundary.py -v
+
+  legacy-conformance:
+    name: legacy-sdk-research (${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12"]
+
+    steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Classify whether this change touches the legacy runtime
+        id: scope
+        shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          PUSH_BEFORE_SHA: ${{ github.event.before }}
+        run: |
+          set -euo pipefail
+
+          if [[ "$EVENT_NAME" == "pull_request" && -n "${PR_BASE_SHA:-}" ]]; then
+            base="$PR_BASE_SHA"
+          elif [[ -n "${PUSH_BEFORE_SHA:-}" && "$PUSH_BEFORE_SHA" != "0000000000000000000000000000000000000000" ]]; then
+            base="$PUSH_BEFORE_SHA"
+          else
+            base="$(git rev-parse HEAD^)"
+          fi
+
+          git diff --name-only "$base" HEAD > /tmp/openline-agents-changed.txt
+          cat /tmp/openline-agents-changed.txt
+
+          legacy_touched=false
+          while IFS= read -r path; do
+            case "$path" in
+              README.md|examples/agents_api_receiver_boundary.py|tests/test_agents_api_receiver_boundary.py|.github/workflows/conformance.yml)
+                ;;
+              "")
+                ;;
+              *)
+                legacy_touched=true
+                ;;
+            esac
+          done < /tmp/openline-agents-changed.txt
+
+          echo "legacy_touched=$legacy_touched" >> "$GITHUB_OUTPUT"
+
+      - name: Probe legacy COLE dependency
+        id: cole
+        shell: bash
+        run: |
+          set -euo pipefail
+          if GIT_TERMINAL_PROMPT=0 git ls-remote \
+            https://github.com/terryncew/cole-portable-core.git \
+            refs/tags/v0.1.0-draft >/tmp/cole-ls-remote.txt 2>/tmp/cole-ls-remote.err; then
+            echo "available=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "available=false" >> "$GITHUB_OUTPUT"
+            echo "::notice title=Legacy COLE dependency unavailable::The legacy conformance dependency could not be fetched. Product-only receiver-boundary changes may continue; changes outside the frozen product-only file set fail closed."
+            cat /tmp/cole-ls-remote.err || true
+          fi
+
+      - name: Refuse unverified legacy-runtime changes
+        if: steps.cole.outputs.available != 'true' && steps.scope.outputs.legacy_touched == 'true'
+        run: |
+          echo "Legacy runtime/research files changed while cole-portable-core is unavailable."
+          echo "Refusing to skip legacy conformance for a change that could affect that path."
+          exit 1
+
+      - name: Checkout legacy COLE dependency
+        if: steps.cole.outputs.available == 'true'
+        uses: actions/checkout@v4
         with:
           repository: terryncew/cole-portable-core
           ref: v0.1.0-draft
           path: _cole
+          persist-credentials: false
+
       - uses: actions/setup-python@v5
+        if: steps.cole.outputs.available == 'true'
         with:
           python-version: ${{ matrix.python-version }}
           cache: pip
-      - run: python -m pip install ./_cole
-      - run: python -m pip install "openai-agents==0.17.6"
-      - run: python -m pip install -e . --no-deps
-      - run: python -m unittest discover -s tests -v
-      - run: python scripts/generate_vectors.py
-      - run: node verify-node.mjs
+
+      - name: Run legacy SDK/research conformance
+        if: steps.cole.outputs.available == 'true'
+        run: |
+          python -m pip install ./_cole
+          python -m pip install "openai-agents==0.17.6"
+          python -m pip install -e . --no-deps
+          python -m unittest discover -s tests -v
+          python scripts/generate_vectors.py
+          node verify-node.mjs
+
+      - name: Record scoped legacy skip
+        if: steps.cole.outputs.available != 'true' && steps.scope.outputs.legacy_touched != 'true'
+        run: |
+          echo "Legacy COLE-dependent conformance was not executed because its external dependency is unavailable."
+          echo "This branch changes only the managed Agents API product surface, its test, README, and this workflow."
