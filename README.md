@@ -185,3 +185,21 @@ The Agents API receiver tests specifically prove that:
 ## License
 
 MIT
+
+---
+
+
+## The rest of OpenLine
+
+Wallet is one part of a larger public stack. These are shipped in separate repositories, not bundled into this package:
+
+- **[OpenLine Lite](https://github.com/terryncew/openline-lite)** — the front door: receiver-owned verification, model handoffs, evidence-impact analysis, and a GitHub Action.
+- **[OpenLine Receipt Gate](https://github.com/terryncew/openline-receipt-gate)** — receiver-owned authorization for consequential Python and LangGraph tool calls, including the `@authorize` function guard.
+- **[OpenLine Airlock](https://github.com/terryncew/openline-airlock)** — lets coding agents search for changes while keeping acceptance rules outside the agents.
+- **[openline-otel](https://github.com/terryncew/openline-otel)** — Python OpenTelemetry receipt capture and Evidence Gateway.
+- **[openline-otel-js](https://github.com/terryncew/openline-otel-js)** — JavaScript OpenTelemetry receipt capture with reciprocal Python/Node conformance.
+- **[OpenLine Claim Graph](https://github.com/terryncew/openline-claim-graph)** — traces which accepted claims and decisions need reconsideration when upstream evidence changes.
+- **[OLP Wire Canon](https://github.com/terryncew/olp-wire-canon)** — the portable byte-level receipt contract shared by producers and verifiers.
+
+If you are new to OpenLine, start with the **[OpenLine Lite Start Here guide](https://github.com/terryncew/openline-lite/blob/main/START_HERE.md)**. You do not need to install the whole stack.
+
